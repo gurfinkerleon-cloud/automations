@@ -63,7 +63,7 @@
         "promptType": "define",
         "text": "={{ $('Parse WhatsApp Input').first().json.chatInput }}\n\n---\nCliente: {{ $('Parse WhatsApp Input').first().json.senderName }}\nChat ID: {{ $('Parse WhatsApp Input').first().json.chatId }}",
         "options": {
-          "systemMessage": "Eres el asistente virtual de LM Express, empresa de courier entre Estados Unidos y Costa Rica.\n\nTu trabajo es ayudar a los clientes con:\n- Estado de sus paquetes\n- Fecha estimada de llegada a Costa Rica\n- Sucursal donde retirar\n- Costo del envío\n- Peso del paquete\n\nCuando el cliente pregunte por un paquete:\n1. Usa la herramienta buscar_paquete para buscarlo por número de tracking O por nombre del cliente.\n2. Si encontrás el paquete, respondé con toda la información disponible de forma amigable.\n3. Si no encontrás el paquete, decile al cliente que verifique el número de tracking o que se comunique con el equipo.\n\nEstados posibles y su significado:\n- 'En bodega USA': El paquete llegó a nuestra bodega en Estados Unidos, pronto sale.\n- 'En tránsito a CR': El paquete ya está en camino a Costa Rica.\n- 'En aduana CR': El paquete está siendo procesado en aduana costarricense.\n- 'Listo para retirar': El paquete está disponible en la sucursal indicada.\n\nSiempre respondé en español, de forma clara y amigable. Usá emojis con moderación (📦✈️📍)."
+          "systemMessage": "Eres el asistente virtual de LM Express, empresa de courier entre Estados Unidos y Costa Rica.\n\nTu trabajo es ayudar a los clientes con:\n- Estado de sus paquetes\n- Fecha estimada de llegada a Costa Rica\n- Sucursal donde retirar\n- Costo del envío\n- Peso del paquete\n\nCuando el cliente pregunte por un paquete:\n1. Usá la herramienta buscar_paquete con el tracking o el nombre del cliente.\n2. Si encontrás el paquete, respondé con toda la información de forma amigable.\n3. Si no lo encontrás, pedile que verifique el número de tracking.\n\nEstados y su significado:\n- 'En bodega USA': Llegó a nuestra bodega en EEUU, pronto sale.\n- 'En tránsito a CR': Ya viene en camino a Costa Rica.\n- 'En aduana CR': En proceso de aduana costarricense.\n- 'Listo para retirar': Disponible en la sucursal indicada.\n\nRespondé siempre en español, claro y amigable. Usá emojis con moderación (📦✈️📍)."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -104,33 +104,15 @@
     },
     {
       "parameters": {
-        "descriptionType": "manual",
-        "toolDescription": "Busca un paquete en la base de datos de LM Express. Podés buscar por número de tracking (ej: UPS123456789) o por nombre del cliente. Devuelve el estado, ubicación, fecha estimada y sucursal de retiro.",
-        "operation": "lookup",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "1qAujKlGm0l6uNAz35nLCaV6OdT88OT_WRVmrPr-ENRU"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "Sheet1"
-        },
-        "lookupColumn": "={{ $fromAI('columna', 'Columna para buscar: Tracking o Nombre') }}",
-        "lookupValue": "={{ $fromAI('valor', 'Valor a buscar: número de tracking o nombre del cliente') }}",
-        "options": {
-          "returnAllMatches": true
-        }
+        "name": "buscar_paquete",
+        "description": "Busca un paquete de LM Express por número de tracking o por nombre del cliente. Devuelve estado, ubicación, fecha estimada de llegada a CR, sucursal de retiro, peso y costo.",
+        "jsCode": "const query = ($input?.first()?.json?.query || '').toLowerCase().trim();\n\nconst paquetes = [\n  {\n    tracking: 'UPS123456789',\n    nombre: 'Juan Pérez',\n    telefono: '+50688881111',\n    estado: 'En bodega USA',\n    ubicacion: 'Miami, FL',\n    fecha_estimada_cr: '20 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 1.5,\n    costo_usd: 8.50\n  },\n  {\n    tracking: 'FDX987654321',\n    nombre: 'María López',\n    telefono: '+50677772222',\n    estado: 'En tránsito a CR',\n    ubicacion: 'En vuelo',\n    fecha_estimada_cr: '18 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 0.8,\n    costo_usd: 5.20\n  },\n  {\n    tracking: 'USPS456789123',\n    nombre: 'Carlos Mora',\n    telefono: '+50666663333',\n    estado: 'En aduana CR',\n    ubicacion: 'Aduana Alajuela',\n    fecha_estimada_cr: '16 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 2.1,\n    costo_usd: 11.00\n  },\n  {\n    tracking: 'DHL321654987',\n    nombre: 'Ana Rodríguez',\n    telefono: '+50655554444',\n    estado: 'Listo para retirar',\n    ubicacion: 'Sucursal Liberia',\n    fecha_estimada_cr: 'Disponible',\n    sucursal_retiro: 'Liberia',\n    peso_kg: 3.0,\n    costo_usd: 15.00\n  },\n  {\n    tracking: 'UPS741852963',\n    nombre: 'Pedro Jiménez',\n    telefono: '+50644443333',\n    estado: 'En bodega USA',\n    ubicacion: 'Los Angeles, CA',\n    fecha_estimada_cr: '22 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 0.5,\n    costo_usd: 4.00\n  },\n  {\n    tracking: 'FDX159357486',\n    nombre: 'Laura Solano',\n    telefono: '+50633332222',\n    estado: 'En tránsito a CR',\n    ubicacion: 'En vuelo',\n    fecha_estimada_cr: '19 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 1.2,\n    costo_usd: 7.50\n  }\n];\n\nconst resultado = paquetes.filter(p =>\n  p.tracking.toLowerCase().includes(query) ||\n  p.nombre.toLowerCase().includes(query)\n);\n\nif (resultado.length === 0) {\n  return [{ json: { encontrado: false, mensaje: 'No se encontró ningún paquete con ese tracking o nombre.' } }];\n}\n\nreturn resultado.map(p => ({ json: { encontrado: true, ...p } }));"
       },
-      "type": "n8n-nodes-base.googleSheetsTool",
-      "typeVersion": 1,
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
       "position": [360, 200],
-      "id": "node-sheets",
-      "name": "buscar_paquete",
-      "credentials": {
-        "googleSheetsOAuth2Api": { "id": "GOOGLE_SHEETS_CREDENTIAL_ID", "name": "Google Sheets account" }
-      }
+      "id": "node-tool",
+      "name": "buscar_paquete"
     },
     {
       "parameters": {
@@ -186,7 +168,6 @@
   "settings": { "executionOrder": "v1" },
   "tags": ["lm-express", "simulacro", "whatsapp"],
   "meta": {
-    "templateCredsSetupCompleted": false,
-    "notes": "SETUP REQUERIDO: 1) Conectar Google Sheets credential (reemplazar GOOGLE_SHEETS_CREDENTIAL_ID). 2) Configurar variables de entorno GREEN_API_INSTANCE y GREEN_API_TOKEN con los datos de la cuenta Green API. 3) Verificar que el Sheet ID sea correcto: 1qAujKlGm0l6uNAz35nLCaV6OdT88OT_WRVmrPr-ENRU"
+    "notes": "Simulacro para LM Express. Datos de paquetes hardcodeados en el Code Tool. Para producción reemplazar con Google Sheets o base de datos real."
   }
 }
