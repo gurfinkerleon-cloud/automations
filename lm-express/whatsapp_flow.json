@@ -106,7 +106,7 @@
       "parameters": {
         "name": "buscar_paquete",
         "description": "Busca un paquete de LM Express por número de tracking o por nombre del cliente. Devuelve estado, ubicación, fecha estimada de llegada a CR, sucursal de retiro, peso y costo.",
-        "jsCode": "const query = ($input?.first()?.json?.query || '').toLowerCase().trim();\n\nconst paquetes = [\n  {\n    tracking: 'UPS123456789',\n    nombre: 'Juan Pérez',\n    telefono: '+50688881111',\n    estado: 'En bodega USA',\n    ubicacion: 'Miami, FL',\n    fecha_estimada_cr: '20 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 1.5,\n    costo_usd: 8.50\n  },\n  {\n    tracking: 'FDX987654321',\n    nombre: 'María López',\n    telefono: '+50677772222',\n    estado: 'En tránsito a CR',\n    ubicacion: 'En vuelo',\n    fecha_estimada_cr: '18 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 0.8,\n    costo_usd: 5.20\n  },\n  {\n    tracking: 'USPS456789123',\n    nombre: 'Carlos Mora',\n    telefono: '+50666663333',\n    estado: 'En aduana CR',\n    ubicacion: 'Aduana Alajuela',\n    fecha_estimada_cr: '16 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 2.1,\n    costo_usd: 11.00\n  },\n  {\n    tracking: 'DHL321654987',\n    nombre: 'Ana Rodríguez',\n    telefono: '+50655554444',\n    estado: 'Listo para retirar',\n    ubicacion: 'Sucursal Liberia',\n    fecha_estimada_cr: 'Disponible',\n    sucursal_retiro: 'Liberia',\n    peso_kg: 3.0,\n    costo_usd: 15.00\n  },\n  {\n    tracking: 'UPS741852963',\n    nombre: 'Pedro Jiménez',\n    telefono: '+50644443333',\n    estado: 'En bodega USA',\n    ubicacion: 'Los Angeles, CA',\n    fecha_estimada_cr: '22 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 0.5,\n    costo_usd: 4.00\n  },\n  {\n    tracking: 'FDX159357486',\n    nombre: 'Laura Solano',\n    telefono: '+50633332222',\n    estado: 'En tránsito a CR',\n    ubicacion: 'En vuelo',\n    fecha_estimada_cr: '19 Jun 2026',\n    sucursal_retiro: '',\n    peso_kg: 1.2,\n    costo_usd: 7.50\n  }\n];\n\nconst resultado = paquetes.filter(p =>\n  p.tracking.toLowerCase().includes(query) ||\n  p.nombre.toLowerCase().includes(query)\n);\n\nif (resultado.length === 0) {\n  return [{ json: { encontrado: false, mensaje: 'No se encontró ningún paquete con ese tracking o nombre.' } }];\n}\n\nreturn resultado.map(p => ({ json: { encontrado: true, ...p } }));"
+        "jsCode": "const query = ($input?.first()?.json?.query || '').toLowerCase().trim();\n\nconst paquetes = [\n  { tracking: 'UPS123456789', nombre: 'Juan Pérez', telefono: '+50688881111', estado: 'En bodega USA', ubicacion: 'Miami, FL', fecha_estimada_cr: '20 Jun 2026', sucursal_retiro: '', peso_kg: 1.5, costo_usd: 8.50 },\n  { tracking: 'FDX987654321', nombre: 'María López', telefono: '+50677772222', estado: 'En tránsito a CR', ubicacion: 'En vuelo', fecha_estimada_cr: '18 Jun 2026', sucursal_retiro: '', peso_kg: 0.8, costo_usd: 5.20 },\n  { tracking: 'USPS456789123', nombre: 'Carlos Mora', telefono: '+50666663333', estado: 'En aduana CR', ubicacion: 'Aduana Alajuela', fecha_estimada_cr: '16 Jun 2026', sucursal_retiro: '', peso_kg: 2.1, costo_usd: 11.00 },\n  { tracking: 'DHL321654987', nombre: 'Ana Rodríguez', telefono: '+50655554444', estado: 'Listo para retirar', ubicacion: 'Sucursal Liberia', fecha_estimada_cr: 'Disponible', sucursal_retiro: 'Liberia', peso_kg: 3.0, costo_usd: 15.00 },\n  { tracking: 'UPS741852963', nombre: 'Pedro Jiménez', telefono: '+50644443333', estado: 'En bodega USA', ubicacion: 'Los Angeles, CA', fecha_estimada_cr: '22 Jun 2026', sucursal_retiro: '', peso_kg: 0.5, costo_usd: 4.00 },\n  { tracking: 'FDX159357486', nombre: 'Laura Solano', telefono: '+50633332222', estado: 'En tránsito a CR', ubicacion: 'En vuelo', fecha_estimada_cr: '19 Jun 2026', sucursal_retiro: '', peso_kg: 1.2, costo_usd: 7.50 }\n];\n\nconst resultado = paquetes.filter(p =>\n  p.tracking.toLowerCase().includes(query) ||\n  p.nombre.toLowerCase().includes(query)\n);\n\nif (resultado.length === 0) {\n  return [{ json: { encontrado: false, mensaje: 'No se encontró ningún paquete con ese tracking o nombre.' } }];\n}\n\nreturn resultado.map(p => ({ json: { encontrado: true, ...p } }));"
       },
       "type": "@n8n/n8n-nodes-langchain.toolCode",
       "typeVersion": 1.1,
@@ -116,20 +116,46 @@
     },
     {
       "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-instance",
+              "name": "green_api_instance",
+              "value": "TU_INSTANCIA_AQUI",
+              "type": "string"
+            },
+            {
+              "id": "cfg-token",
+              "name": "green_api_token",
+              "value": "TU_TOKEN_AQUI",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, -200],
+      "id": "node-config",
+      "name": "Config Green API"
+    },
+    {
+      "parameters": {
         "method": "POST",
-        "url": "=https://api.green-api.com/waInstance{{$env.GREEN_API_INSTANCE}}/sendMessage/{{$env.GREEN_API_TOKEN}}",
+        "url": "=https://api.green-api.com/waInstance{{ $('Config Green API').first().json.green_api_instance }}/sendMessage/{{ $('Config Green API').first().json.green_api_token }}",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
             { "name": "chatId", "value": "={{ $('Parse WhatsApp Input').first().json.chatId }}" },
-            { "name": "message", "value": "={{ $json.output }}" }
+            { "name": "message", "value": "={{ $('Agente LM Express').first().json.output }}" }
           ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [420, -200],
+      "position": [680, -200],
       "id": "node-send",
       "name": "Enviar Respuesta WhatsApp"
     }
@@ -152,6 +178,9 @@
       ]
     },
     "Agente LM Express": {
+      "main": [[{ "node": "Config Green API", "type": "main", "index": 0 }]]
+    },
+    "Config Green API": {
       "main": [[{ "node": "Enviar Respuesta WhatsApp", "type": "main", "index": 0 }]]
     },
     "Anthropic Chat Model": {
@@ -168,6 +197,6 @@
   "settings": { "executionOrder": "v1" },
   "tags": ["lm-express", "simulacro", "whatsapp"],
   "meta": {
-    "notes": "Simulacro para LM Express. Datos de paquetes hardcodeados en el Code Tool. Para producción reemplazar con Google Sheets o base de datos real."
+    "notes": "Simulacro para LM Express. Configurar instancia y token de Green API en el nodo 'Config Green API'."
   }
 }
