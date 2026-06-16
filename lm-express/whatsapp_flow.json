@@ -5,7 +5,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "lm-express-whatsapp",
-        "responseMode": "onReceived",
+        "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -63,7 +63,7 @@
         "promptType": "define",
         "text": "={{ $('Parse WhatsApp Input').first().json.chatInput }}\n\n---\nCliente: {{ $('Parse WhatsApp Input').first().json.senderName }}\nChat ID: {{ $('Parse WhatsApp Input').first().json.chatId }}",
         "options": {
-          "systemMessage": "Eres el asistente virtual de LM Express, empresa de courier entre Estados Unidos y Costa Rica.\n\nTu trabajo es ayudar a los clientes con:\n- Estado de sus paquetes\n- Fecha estimada de llegada a Costa Rica\n- Sucursal donde retirar\n- Costo del envío\n- Peso del paquete\n\nCuando el cliente pregunte por un paquete:\n1. Usá la herramienta buscar_paquete con el tracking o el nombre del cliente.\n2. Si encontrás el paquete, respondé con toda la información de forma amigable.\n3. Si no lo encontrás, pedile que verifique el número de tracking.\n\nEstados y su significado:\n- 'En bodega USA': Llegó a nuestra bodega en EEUU, pronto sale.\n- 'En tránsito a CR': Ya viene en camino a Costa Rica.\n- 'En aduana CR': En proceso de aduana costarricense.\n- 'Listo para retirar': Disponible en la sucursal indicada.\n\nRespondé siempre en español, claro y amigable. Usá emojis con moderación (📦✈️📍)."
+          "systemMessage": "Eres el asistente virtual de LM Express, empresa de courier entre Estados Unidos y Costa Rica.\n\nTu trabajo es ayudar a los clientes con:\n- Estado de sus paquetes\n- Fecha estimada de llegada a Costa Rica\n- Sucursal donde retirar\n- Costo del envío\n- Peso del paquete\n\nCuando el cliente pregunte por un paquete:\n1. Usá la herramienta buscar_paquete para traer todos los paquetes del sistema.\n2. Buscá en los resultados por número de tracking o por nombre del cliente.\n3. Si encontrás el paquete, respondé con toda la información de forma amigable.\n4. Si no lo encontrás, pedile que verifique el número de tracking.\n\nEstados y su significado:\n- 'En bodega USA': Llegó a nuestra bodega en EEUU, pronto sale.\n- 'En tránsito a CR': Ya viene en camino a Costa Rica.\n- 'En aduana CR': En proceso de aduana costarricense.\n- 'Listo para retirar': Disponible en la sucursal indicada.\n\nRespondé siempre en español, claro y amigable. Usá emojis con moderación (📦✈️📍)."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -104,15 +104,30 @@
     },
     {
       "parameters": {
-        "name": "buscar_paquete",
-        "description": "Busca un paquete de LM Express por número de tracking o por nombre del cliente. Devuelve estado, ubicación, fecha estimada de llegada a CR, sucursal de retiro, peso y costo.",
-        "jsCode": "const query = ($input?.first()?.json?.query || '').toLowerCase().trim();\n\nconst paquetes = [\n  { tracking: 'UPS123456789', nombre: 'Juan Pérez', telefono: '+50688881111', estado: 'En bodega USA', ubicacion: 'Miami, FL', fecha_estimada_cr: '20 Jun 2026', sucursal_retiro: '', peso_kg: 1.5, costo_usd: 8.50 },\n  { tracking: 'FDX987654321', nombre: 'María López', telefono: '+50677772222', estado: 'En tránsito a CR', ubicacion: 'En vuelo', fecha_estimada_cr: '18 Jun 2026', sucursal_retiro: '', peso_kg: 0.8, costo_usd: 5.20 },\n  { tracking: 'USPS456789123', nombre: 'Carlos Mora', telefono: '+50666663333', estado: 'En aduana CR', ubicacion: 'Aduana Alajuela', fecha_estimada_cr: '16 Jun 2026', sucursal_retiro: '', peso_kg: 2.1, costo_usd: 11.00 },\n  { tracking: 'DHL321654987', nombre: 'Ana Rodríguez', telefono: '+50655554444', estado: 'Listo para retirar', ubicacion: 'Sucursal Liberia', fecha_estimada_cr: 'Disponible', sucursal_retiro: 'Liberia', peso_kg: 3.0, costo_usd: 15.00 },\n  { tracking: 'UPS741852963', nombre: 'Pedro Jiménez', telefono: '+50644443333', estado: 'En bodega USA', ubicacion: 'Los Angeles, CA', fecha_estimada_cr: '22 Jun 2026', sucursal_retiro: '', peso_kg: 0.5, costo_usd: 4.00 },\n  { tracking: 'FDX159357486', nombre: 'Laura Solano', telefono: '+50633332222', estado: 'En tránsito a CR', ubicacion: 'En vuelo', fecha_estimada_cr: '19 Jun 2026', sucursal_retiro: '', peso_kg: 1.2, costo_usd: 7.50 }\n];\n\nconst resultado = paquetes.filter(p =>\n  p.tracking.toLowerCase().includes(query) ||\n  p.nombre.toLowerCase().includes(query)\n);\n\nif (resultado.length === 0) {\n  return [{ json: { encontrado: false, mensaje: 'No se encontró ningún paquete con ese tracking o nombre.' } }];\n}\n\nreturn resultado.map(p => ({ json: { encontrado: true, ...p } }));"
+        "descriptionType": "manual",
+        "toolDescription": "Trae todos los paquetes del sistema de LM Express. Devuelve tracking, nombre del cliente, estado, ubicación, fecha estimada de llegada a CR, sucursal de retiro, peso y costo. Usá esta herramienta siempre que el cliente pregunte por un paquete.",
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1LqwsrxTHmBGxA6WfC17r3EoRLWoyE1FtSFi7y4JV1wk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "filtersUI": {},
+        "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
-      "typeVersion": 1.1,
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 1,
       "position": [360, 200],
-      "id": "node-tool",
-      "name": "buscar_paquete"
+      "id": "node-sheets",
+      "name": "buscar_paquete",
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "REEMPLAZAR_CON_TU_CREDENTIAL_ID", "name": "Google Sheets account" }
+      }
     },
     {
       "parameters": {
@@ -197,6 +212,6 @@
   "settings": { "executionOrder": "v1" },
   "tags": ["lm-express", "simulacro", "whatsapp"],
   "meta": {
-    "notes": "Simulacro para LM Express. Configurar instancia y token de Green API en el nodo 'Config Green API'."
+    "notes": "Simulacro LM Express. Sheet ID: 1LqwsrxTHmBGxA6WfC17r3EoRLWoyE1FtSFi7y4JV1wk. Configurar credencial de Google Sheets y datos de Green API en nodo Config."
   }
 }
