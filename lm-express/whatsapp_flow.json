@@ -1,0 +1,217 @@
+{
+  "name": "LM Express - Agente WhatsApp Simulacro",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lm-express-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 0],
+      "id": "node-001",
+      "name": "WhatsApp Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-600, 200],
+      "id": "node-ack",
+      "name": "ACK Green API"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\n\nconst typeWebhook = body.typeWebhook || '';\nif (typeWebhook !== 'incomingMessageReceived') {\n  return [];\n}\n\nconst chatId = body.senderData?.chatId || '';\nconst senderName = body.senderData?.senderName || '';\nconst typeMessage = body.messageData?.typeMessage || '';\n\nlet chatInput = '';\nif (typeMessage === 'textMessage') {\n  chatInput = body.messageData?.textMessageData?.textMessage || '';\n} else if (typeMessage === 'extendedTextMessage') {\n  chatInput = body.messageData?.extendedTextMessageData?.text || '';\n}\n\nreturn [{ json: { chatId, chatInput, senderName } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-420, 0],
+      "id": "node-002",
+      "name": "Parse WhatsApp Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "cond-has-input",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-240, 0],
+      "id": "node-003",
+      "name": "IF Has Message"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Parse WhatsApp Input').first().json.chatInput }}\n\n---\nCliente: {{ $('Parse WhatsApp Input').first().json.senderName }}\nChat ID: {{ $('Parse WhatsApp Input').first().json.chatId }}",
+        "options": {
+          "systemMessage": "Eres el asistente virtual de LM Express, empresa de courier entre Estados Unidos y Costa Rica.\n\nTu trabajo es ayudar a los clientes con:\n- Estado de sus paquetes\n- Fecha estimada de llegada a Costa Rica\n- Sucursal donde retirar\n- Costo del envío\n- Peso del paquete\n\nCuando el cliente pregunte por un paquete:\n1. Usá la herramienta buscar_paquete para traer todos los paquetes del sistema.\n2. Buscá en los resultados por número de tracking o por nombre del cliente.\n3. Si encontrás el paquete, respondé con toda la información de forma amigable.\n4. Si no lo encontrás, pedile que verifique el número de tracking.\n\nEstados y su significado:\n- 'En bodega USA': Llegó a nuestra bodega en EEUU, pronto sale.\n- 'En tránsito a CR': Ya viene en camino a Costa Rica.\n- 'En aduana CR': En proceso de aduana costarricense.\n- 'Listo para retirar': Disponible en la sucursal indicada.\n\nRespondé siempre en español, claro y amigable. Usá emojis con moderación (📦✈️📍)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [200, 0],
+      "id": "node-agent",
+      "name": "Agente LM Express"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-haiku-4-5-20251001",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [80, 200],
+      "id": "node-llm",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": { "id": "0AH2aKB0F6Xrj8LV", "name": "Anthropic account" }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Parse WhatsApp Input').first().json.chatId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [220, 200],
+      "id": "node-memory",
+      "name": "Memoria por Chat"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Trae todos los paquetes del sistema de LM Express. Devuelve tracking, nombre del cliente, estado, ubicación, fecha estimada de llegada a CR, sucursal de retiro, peso y costo. Usá esta herramienta siempre que el cliente pregunte por un paquete.",
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1LqwsrxTHmBGxA6WfC17r3EoRLWoyE1FtSFi7y4JV1wk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "filtersUI": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 1,
+      "position": [360, 200],
+      "id": "node-sheets",
+      "name": "buscar_paquete",
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "REEMPLAZAR_CON_TU_CREDENTIAL_ID", "name": "Google Sheets account" }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-instance",
+              "name": "green_api_instance",
+              "value": "TU_INSTANCIA_AQUI",
+              "type": "string"
+            },
+            {
+              "id": "cfg-token",
+              "name": "green_api_token",
+              "value": "TU_TOKEN_AQUI",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, -200],
+      "id": "node-config",
+      "name": "Config Green API"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.green-api.com/waInstance{{ $('Config Green API').first().json.green_api_instance }}/sendMessage/{{ $('Config Green API').first().json.green_api_token }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chatId", "value": "={{ $('Parse WhatsApp Input').first().json.chatId }}" },
+            { "name": "message", "value": "={{ $('Agente LM Express').first().json.output }}" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, -200],
+      "id": "node-send",
+      "name": "Enviar Respuesta WhatsApp"
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          { "node": "ACK Green API", "type": "main", "index": 0 },
+          { "node": "Parse WhatsApp Input", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Parse WhatsApp Input": {
+      "main": [[{ "node": "IF Has Message", "type": "main", "index": 0 }]]
+    },
+    "IF Has Message": {
+      "main": [
+        [{ "node": "Agente LM Express", "type": "main", "index": 0 }]
+      ]
+    },
+    "Agente LM Express": {
+      "main": [[{ "node": "Config Green API", "type": "main", "index": 0 }]]
+    },
+    "Config Green API": {
+      "main": [[{ "node": "Enviar Respuesta WhatsApp", "type": "main", "index": 0 }]]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [[{ "node": "Agente LM Express", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Memoria por Chat": {
+      "ai_memory": [[{ "node": "Agente LM Express", "type": "ai_memory", "index": 0 }]]
+    },
+    "buscar_paquete": {
+      "ai_tool": [[{ "node": "Agente LM Express", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": ["lm-express", "simulacro", "whatsapp"],
+  "meta": {
+    "notes": "Simulacro LM Express. Sheet ID: 1LqwsrxTHmBGxA6WfC17r3EoRLWoyE1FtSFi7y4JV1wk. Configurar credencial de Google Sheets y datos de Green API en nodo Config."
+  }
+}
